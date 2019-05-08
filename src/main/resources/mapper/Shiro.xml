@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.derry.dao.ShiroDao">
+    <select id="getUserByUserName" resultType="com.derry.pojo.User">
+        select * FROM user
+        WHERE phone= #{0}
+    </select>
+
+    <select id="getUserRoleByUserId" resultType="java.lang.Integer">
+        SELECT roleid FROM user_role
+        where userid = #{_parameter}
+
+    </select>
+
+    <select id="getPermissionsByRoleId" resultType="com.derry.pojo.Permission">
+        SELECT a.id,a.url,a.roleid as roleId,a.description FROM permission a
+        WHERE roleid = #{_parameter}
+    </select>
+
+</mapper>

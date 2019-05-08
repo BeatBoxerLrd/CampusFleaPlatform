@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.derry.dao.GoodImageMapper" >
+
+    <select id="selectAllGoodsByCalteLogByDate" resultType="com.derry.pojo.GoodImage">
+        SELECT  g.*,i.img_url from goods g LEFT JOIN image i
+        ON g.id=i.goods_id
+        where catelog_id = #{catelogId,jdbcType=INTEGER}
+        ORDER  BY  polish_time DESC
+    </select>
+
+    <select id="selectAllGoodsBydata" resultType="com.derry.pojo.GoodImage">
+        SELECT  g.*,i.img_url from goods g LEFT JOIN image i
+        ON g.id=i.goods_id
+        ORDER  BY  polish_time DESC
+    </select>
+</mapper>
