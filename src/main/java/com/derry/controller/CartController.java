@@ -1,19 +1,23 @@
 package com.derry.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.derry.dto.BuyerCart;
 import com.derry.dto.BuyerItem;
 import com.derry.dto.Constants;
-import com.derry.pojo.Goods;
+;
 import com.derry.pojo.User;
 import com.derry.service.CartService;
-import com.derry.util.RequestUtils;
+import com.derry.util.MySession;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.Cookie;
@@ -21,11 +25,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+
+import java.util.*;
 
 /**
  * @Author:LiuRuidong
@@ -42,8 +46,12 @@ public class CartController {
     //amount默认为1
     @ResponseBody
     @RequestMapping(value="/buyerCart")
-    public <T> String buyerCart(String itemId, String amount, HttpServletRequest request,
-                                HttpServletResponse response, HttpSession session) throws JsonParseException, JsonMappingException, IOException {
+    public void buyerCart(@RequestParam(value = "itemId") String itemId, @RequestParam(value = "amount") String amount, HttpServletRequest request,
+                               @RequestParam(value = "sessionId")String sessionId, HttpServletResponse response, HttpSession session) throws JsonParseException, JsonMappingException, IOException {
+        Map<String ,Object> resList = new HashMap<>();
+        String callback = request.getParameter("callback");
+
+
         //将对象转换成json字符串/json字符串转成对象
         ObjectMapper om = new ObjectMapper();
         om.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -84,9 +92,30 @@ public class CartController {
         });
 
         //前三点 登录和非登录做的是一样的操作, 在第四点需要判断
+        User user = null;
+        try {
+           user = (User) MySession.getInstance().getSession(sessionId).getAttribute("loginuser");
+        }catch (Exception e){
+            user = null;
+        }
+        String username = null;
+        if(user!=null){
+            username = String.valueOf(user.getId());
+        }
+        //User user = userService.getUserByPhone(phone);
 
         //String username = RequestUtils.getAttributterForUsername(RequestUtils.getCSessionId(request, response));
-        String username = (String) session.getAttribute("user");
+        ///String username = (String) session.getAttribute("user");
+        response.setCharacterEncoding("utf-8");
+        response.setContentType("text/html;charset=utf-8");
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        PrintWriter pw = null;
+        try {
+            pw = response.getWriter();
+        } catch (Exception e) {
+            //e.printStackTrace();
+            resList.put("code","false");
+        }
         if (null != username) {
             //登录了
             //4, 将购物车追加到Redis中
@@ -102,7 +131,9 @@ public class CartController {
             //将对象转换成json格式
             Writer w = new StringWriter();
             om.writeValue(w, buyerCart);
+            System.out.println(w.toString());
             Cookie cookie = new Cookie("BUYER_CART", w.toString());
+//            URLEncoder.encode("BUYER_CART", "utf-8");
             //设置path是可以共享cookie
             cookie.setPath("/");
             //设置Cookie过期时间: -1 表示关闭浏览器失效  0: 立即失效  >0: 单位是秒, 多少秒后失效
@@ -110,9 +141,19 @@ public class CartController {
             //5,Cookie写会浏览器
             response.addCookie(cookie);
         }
+        resList.put("code","true");
+        System.out.println((String) resList.get("code"));
+        //resList.put("code","true");
+        String json = JSON.toJSONString(resList);
 
-        //6, 重定向
-        return "redirect:/shopping/toCart";
+        if ((callback != "") && (callback != null)) {
+            json = callback + "(" + json + ")";
+        }
+        System.out.println(json);
+        pw.println(json);
+        pw.flush();
+        pw.close();
+
     }
 
     //去购物车结算, 这里有两个地方可以直达: 1,在商品详情页 中点击加入购物车按钮  2, 直接点击购物车按钮
@@ -138,6 +179,9 @@ public class CartController {
          //判断是否登录
          //String username = sessionProviderService.getAttributterForUsername(RequestUtils.getCSessionId(request, response));
          String username = (String) session.getAttribute("user");
+         /*Subject currentUser = SecurityUtils.getSubject();
+         Session session = currentUser.getSession();
+         User user = (User) session.getAttribute("currentUser");*/
          if (null != username) {
              //登录了
              //2, 购物车 有东西, 则将购物车的东西保存到Redis中
