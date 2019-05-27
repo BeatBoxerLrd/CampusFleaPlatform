@@ -57,6 +57,14 @@ public class BuyerItem  implements Serializable {
         return Objects.hash(goodsService, isHave, amount);
     }
 
-
+    @Override
+    public String toString() {
+        return "BuyerItem{" +
+                "goodsService=" + goodsService +
+                ", itemId=" + itemId +
+                ", isHave=" + isHave +
+                ", amount=" + amount +
+                '}';
+    }
 }
 

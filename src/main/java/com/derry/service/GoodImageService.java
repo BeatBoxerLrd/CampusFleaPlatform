@@ -29,4 +29,6 @@ public interface GoodImageService {
      * @return
      */
     Map<String,Object> getAllGoodsByDate(int catelog,int pageNum, int pageSize);
+
+    Map<String,Object>  getGoodsByItemId(int  itemId);
 }

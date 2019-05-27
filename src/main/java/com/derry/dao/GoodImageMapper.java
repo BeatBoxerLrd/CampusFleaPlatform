@@ -24,4 +24,5 @@ public interface GoodImageMapper {
      */
     List<GoodImage> selectAllGoodsBydata();
 
+    GoodImage selectGoodsByItemId(@Param("itemId")int id);
 }

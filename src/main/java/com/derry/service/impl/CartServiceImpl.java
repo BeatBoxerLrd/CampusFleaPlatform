@@ -81,7 +81,7 @@ public class CartServiceImpl implements CartService {
             for (Map.Entry<String, String> entry : entrySet) {
                 //entry.getKey(): skuId
                 BuyerItem buyerItem = new BuyerItem();
-                buyerItem.setItemId(Integer.parseInt(entry.getValue()));
+                buyerItem.setItemId(Integer.parseInt(entry.getKey()));
                 //entry.getValue(): amount
                 buyerItem.setAmount(Integer.parseInt(entry.getValue()));
                 //添加到购物车中
@@ -90,4 +90,15 @@ public class CartServiceImpl implements CartService {
 
             return buyerCart;
     }
+
+    @Override
+    public void delBuyerCart(String[] itemIds, String username) {
+        if(itemIds.length!=0){
+            for (int i = 0; i <itemIds.length ; i++) {
+                jedisClient.hdel("buyerCart:"+username,itemIds[i]);
+            }
+        }
+    }
+
+
 }

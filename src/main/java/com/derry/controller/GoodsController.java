@@ -4,14 +4,13 @@ import com.alibaba.fastjson.JSON;
 import com.derry.pojo.*;
 import com.derry.service.*;
 import com.derry.util.DateUtil;
+import com.derry.util.MySession;
+import com.derry.util.UserStatus;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -41,44 +40,83 @@ public class GoodsController {
     @Autowired
     private UserService userService;
 
+
     @ResponseBody
     @RequestMapping(value = "/publishGoods")
-    public void puslishGoods(HttpServletRequest request,HttpServletResponse response, @RequestParam(value="userId") String userId,@RequestParam(value = "fileUploads") MultipartFile[] uploadFiles,@RequestParam(value = "goodsName") String goodsName,@RequestParam(value = "price") String price,@RequestParam(value = "realPrice") String realPrice,@RequestParam(value = "catelogId") String catelogId,@RequestParam(value = "describle") String describle){
+    //public void puslishGoods(HttpServletRequest request,HttpServletResponse response, @RequestParam(value="userId") String userId,@RequestParam(value = "fileUploads") MultipartFile[] uploadFiles,@RequestParam(value = "goodsName") String goodsName,@RequestParam(value = "price") String price,@RequestParam(value = "realPrice") String realPrice,@RequestParam(value = "catelogId") String catelogId,@RequestParam(value = "describle") String describle){
+    public String publish(@RequestParam(value = "files", required = true) MultipartFile[] multipartFiles,HttpServletRequest request, HttpServletResponse response){
+        Map<String ,Object> resList = new HashMap<>();
+        //String callback = request.getParameter("callback");
+        StringBuilder urls = new StringBuilder();
+        MultipartFile[] uploadFiles = multipartFiles;
+        for(MultipartFile uploadFile:uploadFiles){
+            Map result = pictureService.uploadPicture(uploadFile);
+            if(result!=null && result.get("error").equals(0)){
+                String imgUrl = (String) result.get("url");
+                urls.append(imgUrl);
+                urls.append(";");
+                System.out.println(imgUrl);
+                resList.put("code",200);
+                resList.put("message","发布成功");
+            }else if(result.get("error").equals(1)){
+                resList.put("code",500);
+                resList.put("message",result.get("message"));
+                break;
+            }
+        }
+        //String userId = request.getParameter("userId");
+        String sessionId = request.getParameter("sessionId");
+        //String phone = (String ) MySession.getInstance().getSession(sessionId).getAttribute("userTelphone");
+        //User user = userService.getUserByPhone(phone);
+        User user = (User) MySession.getInstance().getSession(sessionId).getAttribute("loginuser");
+        Integer userId = user.getId();
+        String goodsName = request.getParameter("goodsName");
+        String price = request.getParameter("price");
+        String realPrice = request.getParameter("realPrice");
+        String catelogId = request.getParameter("catelogId");
+        String describle = request.getParameter("describle");
+        System.out.println(userId+"--"+goodsName+"--"+price+"--"+realPrice+"--"+catelogId+"--"+describle);
+        Goods goods = new Goods();
+        goods.setUserId(userId);
+        goods.setCatelogId(Integer.valueOf(catelogId));
+        goods.setName(goodsName);
+        goods.setPrice(Float.valueOf(price));
+        goods.setRealPrice(Float.valueOf(realPrice));
+        goods.setDescrible(describle);
+        int id = goodsService.addGood(goods,30);
+        System.out.println(goods.getId());
+        System.out.println(id);
+        Image image = new Image();
+        image.setGoodsId(goods.getId());
+        image.setImgUrl(urls.toString());
+        imageService.insert(image);
+        String json = JSON.toJSONString(resList);
+        response.setCharacterEncoding("utf-8");
+        response.setContentType("text/html;charset=utf-8");
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        return json;
+    }
 
+    @ResponseBody
+    @RequestMapping(value = "/itemDetail")
+    public void itemDetail(HttpServletRequest request,HttpServletResponse response,@RequestParam(value = "itemId") String itemId,@RequestParam(value = "sessionId")String sessionId){
         Map<String ,Object> resList = new HashMap<>();
         String callback = request.getParameter("callback");
-        StringBuilder urls = new StringBuilder();
+        //String sessionId = request.getParameter("sessionId");
+        //String phone = (String ) MySession.getInstance().getSession(sessionId).getAttribute("userTelphone");
+        resList=  goodImageService.getGoodsByItemId(Integer.valueOf(itemId));
+        String json = JSON.toJSONString(resList);
         try {
-            for (int i = 0; i < uploadFiles.length; i++) {
-                MultipartFile uploadFile = uploadFiles[i];
-                Map result = pictureService.uploadPicture(uploadFile);
-                if(result!=null && result.get("error").equals(0)){
-                    String imgUrl = (String) result.get("url");
-                    urls.append(imgUrl);
-                    System.out.println(imgUrl);
-                    resList.put("code",200);
-                    resList.put("message","发布成功");
-                }else if(result.get("error").equals(1)){
-                    resList.put("code",500);
-                    resList.put("message",result.get("message"));
-                    break;
-                }
-            }
-
-            String json = JSON.toJSONString(resList);
             response.setCharacterEncoding("utf-8");
             response.setContentType("text/html;charset=utf-8");
-            PrintWriter pw = null;
-            pw = response.getWriter();
-            if ((callback != "") && (callback != null)) {
-                json = callback + "(" + json + ")";
+            PrintWriter pw = response.getWriter();
+            if ((callback!="")&&(callback!=null)){
+                json=callback+"("+json+")";
             }
             System.out.println(json);
             pw.println(json);
             pw.flush();
-            // 浏览器擅长处理json格式的字符串，为了减少因为浏览器内核不同导致的bug，建议用json
-            //json = new ObjectMapper().writeValueAsString(result);
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -103,7 +141,8 @@ public class GoodsController {
     @ResponseBody
     @RequestMapping(value = "/catelog")
     public void goodsList(HttpServletRequest request, HttpServletResponse response,HttpSession session, @RequestParam(value="catalog") String catalog,@RequestParam(value="pageSize")String pageSize,@RequestParam(value="pageNum")String pageNum){
-        System.out.println("session为："+session.getAttribute("user"));
+        //System.out.println(UserStatus.getStatus().getPhone());
+        //System.out.println("session为："+session.getAttribute("user"));
         System.out.println(Integer.valueOf(catalog)+"____"+Integer.valueOf(pageNum)+"____"+Integer.valueOf(pageSize));
         Map<String,Object> resList = null;
         String callback = request.getParameter("callback");

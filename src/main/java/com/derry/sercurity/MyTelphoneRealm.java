@@ -4,12 +4,14 @@ import com.derry.pojo.Permission;
 import com.derry.pojo.User;
 import com.derry.service.ShiroService;
 import com.derry.util.MySession;
+import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.*;
 import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.PrincipalCollection;
+import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Resource;
@@ -51,6 +53,9 @@ public class MyTelphoneRealm extends AuthorizingRealm {
         //用户名为手机号
         System.out.println("1："+(userNamePasswordTelphoneToken.getPhone()));
         User user  = shiroService.getUserByUserName(userNamePasswordTelphoneToken.getPhone());
+        /*Subject currentUser = SecurityUtils.getSubject();
+        Session session = currentUser.getSession();
+        session.setAttribute("currentUser",user);*/
         System.out.println("1!");
         String sessionId = userNamePasswordTelphoneToken.getSessionId();
         String code = (String )MySession.getInstance().getSession(sessionId).getAttribute("code");

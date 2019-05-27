@@ -5,8 +5,11 @@ import com.derry.dao.ShiroDao;
 import com.derry.pojo.User;
 import com.derry.sercurity.UserNamePasswordTelphoneToken;
 import com.derry.service.CodeService;
+import com.derry.service.UserService;
+import com.derry.util.MySession;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,7 +32,8 @@ public class LoginController {
     private CodeService codeService;
     @Autowired
     private ShiroDao shiroDao;
-
+    @Autowired
+    private UserService userService;
 
     /**
      * @Author：LiuRuidong
@@ -40,19 +44,30 @@ public class LoginController {
      */
     @RequestMapping("/dologin")
     @ResponseBody
-    public void dologin(@RequestParam("username") String username, @RequestParam("password") String password, HttpSession session,HttpServletRequest request, HttpServletResponse response){
+    public void dologin(@RequestParam("username") String username, @RequestParam("password") String password, HttpServletRequest request, HttpServletResponse response,HttpSession session){
         Map<String ,Object> resList = new HashMap<>();
         String callback = request.getParameter("callback");
-        Subject subject = SecurityUtils.getSubject();
+        Subject currentUser = SecurityUtils.getSubject();
         UsernamePasswordToken token = new UsernamePasswordToken(username, password);
         try {
-            subject.login(token);
-            User user = (User)subject.getPrincipal();
-            System.out.println("subject:"+subject);
-            session.setAttribute("user",user);
+
+            currentUser.login(token);
+            MySession myc= MySession.getInstance();
+            myc.AddSession( request.getSession());
+            User loginUser  = userService.getUserByPhone(username);
+            request.getSession().setAttribute("loginuser",loginUser);
+            //request.getSession().setAttribute("userTelphone",username);
+            String  sessionId = request.getSession().getId();
+            token.setRememberMe(true);
+            User user = (User)currentUser.getPrincipal();
+            System.out.println("subject:"+currentUser);
+
+            //session.setAttribute("user",user);
             //String username =  (User)session.getAttribute("user").getClass().getDeclaredField("username");
             System.out.println("user:"+user);
             System.out.println("登录完成");
+
+            resList.put("sessionId",sessionId);
             resList.put("code","true");
             String json = JSON.toJSONString(resList);
             response.setCharacterEncoding("utf-8");
@@ -85,7 +100,7 @@ public class LoginController {
         String phone=request.getParameter("userPhone");
         //首先需要根据该手机号去查询用户信息
         User user = shiroDao.getUserByUserName(phone);
-        session.setAttribute("user",user);
+        //session.setAttribute("user",user);
         if(user == null){
             resList.put("status","none");
         }else{
@@ -127,8 +142,13 @@ public class LoginController {
         try {
             subject.login(token);
             User user = (User)subject.getPrincipal();
-
-            session.setAttribute("user",subject);
+            MySession myc= MySession.getInstance();
+            myc.AddSession( request.getSession());
+            User loginUser  = userService.getUserByPhone(phone);
+            request.getSession().setAttribute("loginuser",loginUser);
+            //request.getSession().setAttribute("userTelphone",phone);
+            String  sessionId1 = request.getSession().getId();
+            resList.put("sessionId",sessionId1);
             System.out.println("登录完成");
             resList.put("code","true");
             String json = JSON.toJSONString(resList);

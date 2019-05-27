@@ -26,4 +26,6 @@ public interface CartService {
         void insertBuyerCartToRedis(BuyerCart buyerCart, String username);
 
         BuyerCart selectBuyerCartFromRedis(String username);
+
+        void delBuyerCart(String[] itemIds,String username);
 }

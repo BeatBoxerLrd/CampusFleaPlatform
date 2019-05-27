@@ -4,6 +4,7 @@ import com.derry.pojo.Goods;
 import com.derry.service.GoodsService;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.List;
  * @Date: Created in 0:11 2019/5/5
  * @Modified By:
  */
+@Component
 public class BuyerCart implements Serializable {
     @Autowired
     private GoodsService goodsService;
@@ -86,5 +88,13 @@ public class BuyerCart implements Serializable {
     @JsonIgnore
     public Float getTotalPrice(){
         return getProductPrice() + getFee();
+    }
+
+    @Override
+    public String toString() {
+        return "BuyerCart{" +
+                "goodsService=" + goodsService +
+                ", items=" + items +
+                '}';
     }
 }

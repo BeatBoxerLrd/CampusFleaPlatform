@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface GoodsService {
+
+
     /**
      * 发布商品
      * @param goods

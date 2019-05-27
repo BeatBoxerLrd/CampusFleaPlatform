@@ -61,4 +61,18 @@ public class GoodImageServiceImpl implements GoodImageService {
         }
         return resMap;
     }
+
+    @Override
+    public Map<String,Object> getGoodsByItemId(int itemId) {
+        Map<String,Object> resMap = new HashMap<>();
+        try{
+            System.out.println("jaha");
+            GoodImage goods = goodImageMapper.selectGoodsByItemId(itemId);
+            System.out.println(goods.toString());
+            resMap.put("data",goods);
+        }catch (Exception e){
+            resMap.put("code",0);
+        }
+        return resMap;
+    }
 }

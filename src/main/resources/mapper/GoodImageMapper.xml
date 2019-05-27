@@ -14,4 +14,10 @@
         ON g.id=i.goods_id
         ORDER  BY  polish_time DESC
     </select>
+
+    <select id="selectGoodsByItemId" parameterType="int" resultType="com.derry.pojo.GoodImage">
+        SELECT  g.*,i.img_url from goods g LEFT JOIN image i
+        ON g.id=i.goods_id
+        WHERE g.id = ${itemId}
+    </select>
 </mapper>
